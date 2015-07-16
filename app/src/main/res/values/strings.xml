@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">야식뭐먹지?</string>
+
+    <string name="action_settings">설정</string>
+    <string name="title_activity_logo">야식뭐먹지?</string>
+    <string name="todayrecipe_name">오늘의 야식</string>
+    <string name="searchrecipe_name">김야식찾기</string>
+    <string name="review_name">전국야식자랑</string>
+
+</resources>
