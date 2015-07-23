@@ -3,6 +3,7 @@ package com.overlab.overflow.tonighteat;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
@@ -13,7 +14,11 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 
 public class MainActivity extends ActionBarActivity {
@@ -24,7 +29,14 @@ public class MainActivity extends ActionBarActivity {
     private Button btn_tr, btn_sr, btn_rv;
     private WebView mainWeb;
 
-    final private String MAIN_URL = "http://green809.iptime.org:5529/TonightEat/index.html";
+    final private String MAIN_URL = "http://tonightrecipe.parseapp.com/index.html";
+    final private String TODAY_RECIPE = "http://tonightrecipe.parseapp.com/recipeview.html?objectId=today";
+    final private String SERACH_RECIPE = "http://tonightrecipe.parseapp.com/search.html";
+    final private String REVIEW_RECIPE = "http://tonightrecipe.parseapp.com/review.html";
+
+    private final static int FILECHOOSER_RESULTCODE = 1;
+    private ValueCallback<Uri> mUploadMessage;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,8 +57,31 @@ public class MainActivity extends ActionBarActivity {
         mainWeb = (WebView) findViewById(R.id.webView);
         mainWeb.getSettings().setJavaScriptEnabled(true);
         mainWeb.getSettings().setUseWideViewPort(true);
+        mainWeb.getSettings().setPluginState(WebSettings.PluginState.ON);
+        mainWeb.setWebViewClient(new WebViewClient(){
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+
+                view.loadUrl(url);
+                return true;
+            }
+        });
+
         mainWeb.loadUrl(MAIN_URL);
 
+    }
+
+    @Override
+    protected  void onActivityResult(int requestCode, int resultCode,
+                                     Intent intent) {
+        if (requestCode == FILECHOOSER_RESULTCODE) {
+            if (null == mUploadMessage)
+                return;
+            Uri result = intent == null || resultCode != RESULT_OK ? null
+                    : intent.getData();
+            mUploadMessage.onReceiveValue(result);
+            mUploadMessage = null;
+        }
     }
 
     @Override
@@ -98,11 +133,37 @@ public class MainActivity extends ActionBarActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         if (actionBarDrawerToggle.onOptionsItemSelected(item)) {
 
+            mainWeb.setWebViewClient(new WebViewClient(){
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                    view.loadUrl(url);
+                    return true;
+                }
+            });
+
+            mainWeb.setWebChromeClient(new WebChromeClient()
+            {
+                @SuppressWarnings("unused")
+                public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType, String capture) {
+                    mUploadMessage = uploadMsg;
+                    Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+
+
+                    MainActivity.this.startActivityForResult(
+                            Intent.createChooser(i, "사진을 선택하세요"),
+                            FILECHOOSER_RESULTCODE);
+                }
+            });
+
             btn_tr = (Button) findViewById(R.id.btn_todayrecipe);
             btn_tr.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
 
+                    mainWeb.loadUrl(TODAY_RECIPE);
+                    toolbar.setTitle(R.string.todayrecipe_name);
                     drawerLayout.closeDrawers();
                 }
             });
@@ -112,6 +173,8 @@ public class MainActivity extends ActionBarActivity {
                 @Override
                 public void onClick(View v) {
 
+                    mainWeb.loadUrl(SERACH_RECIPE);
+                    toolbar.setTitle(R.string.searchrecipe_name);
                     drawerLayout.closeDrawers();
                 }
             });
@@ -121,6 +184,8 @@ public class MainActivity extends ActionBarActivity {
                 @Override
                 public void onClick(View v) {
 
+                    mainWeb.loadUrl(REVIEW_RECIPE);
+                    toolbar.setTitle(R.string.review_name);
                     drawerLayout.closeDrawers();
                 }
             });
